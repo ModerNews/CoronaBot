@@ -19,7 +19,7 @@ TOKEN = os.getenv('discordToken')
 bot = commands.Bot(command_prefix=('Corona', '!'))
 lastEmbed = None
 
-locale.setlocale(locale.LC_TIME, 'pl_PL')
+# locale.setlocale(locale.LC_TIME, 'pl_PL')
 
 
 @bot.event
@@ -64,11 +64,11 @@ class QuizCog(commands.Cog):
         self.database = sqlite3.connect('quiz.db')
         self.quiz_channel = None
 
-    @bot.command(name='options')
+    @commands.command(name='options')
     async def add_option(self, ctx, emoji: Union[discord.PartialEmoji, str], *, value):
         cur = self.database.cursor()
         now = datetime.datetime.now() + datetime.timedelta(days=30)
-        query = now.strftime('%B %Y')
+        query = now.strftime('%B %Y').title()
         acting_quiz: tuple[str, str] = cur.execute(f"SELECT * FROM quiz WHERE [month] = '{query}'").fetchone()
         if self.quiz_channel is None:
             self.quiz_channel = self.bot.get_channel(780881100750585866)
@@ -85,19 +85,19 @@ class QuizCog(commands.Cog):
 
     async def new_quiz(self, ctx, emoji: discord.PartialEmoji, value, channel: discord.TextChannel):
         now = datetime.datetime.now() + datetime.timedelta(days=30)
-        quiz = discord.Embed(title=now.strftime('%B %Y'), colour=discord.Colour.blurple(), description=f"{str(emoji)} {value}")
+        quiz = discord.Embed(title=now.strftime('%B %Y').title(), colour=discord.Colour.blurple(), description=f"{str(emoji)} {value}")
         quiz.set_author(name='Głosowanie na tematykę nicków')
         cur = self.database.cursor()
         quiz_message = await channel.send("@everyone rozpoczynamy nowe głosowanie", embed=quiz)
         await quiz_message.add_reaction(emoji)
-        cur.execute(f"INSERT INTO quiz VALUES ('{now.strftime('%B %Y')}', '{quiz_message.id}')")
+        cur.execute(f"INSERT INTO quiz VALUES ('{now.strftime('%B %Y').title()}', '{quiz_message.id}')")
         cur.close()
         self.database.commit()
 
     async def close_quiz(self):
         now = datetime.datetime.now()
         cur = self.database.cursor()
-        query = now.strftime('%B %Y')
+        query = now.strftime('%B %Y').title()
         acting_quiz: tuple[str, str] = cur.execute(f"SELECT * FROM quiz WHERE [month] = '{query}'").fetchone()
         if acting_quiz is None:
             return
