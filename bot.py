@@ -19,7 +19,7 @@ TOKEN = os.getenv('discordToken')
 bot = commands.Bot(command_prefix=('Corona', '!'))
 lastEmbed = None
 
-# locale.setlocale(locale.LC_TIME, 'pl_PL')
+locale.setlocale(locale.LC_TIME, 'pl_PL')
 
 
 @bot.event
@@ -73,7 +73,7 @@ class QuizCog(commands.Cog):
         if self.quiz_channel is None:
             self.quiz_channel = self.bot.get_channel(780881100750585866)
         if acting_quiz is None:
-            await self.new_quiz(ctx, emoji, value, self.quiz_channel)
+            print(await self.new_quiz(ctx, emoji, value, self.quiz_channel))
         else:
             message: discord.Message = await self.quiz_channel.fetch_message(int(acting_quiz[1]))
             quiz: discord.Embed = message.embeds[0]
@@ -81,6 +81,7 @@ class QuizCog(commands.Cog):
             await message.edit(embed=quiz)
             await message.add_reaction(emoji)
             await message.channel.send(".", delete_after=0.1)
+            print(f"[LOG];{datetime.datetime.now()};Added new option for month {now.strftime('%B %Y').title()}")
         await ctx.message.add_reaction("👍")
 
     async def new_quiz(self, ctx, emoji: discord.PartialEmoji, value, channel: discord.TextChannel):
@@ -93,6 +94,7 @@ class QuizCog(commands.Cog):
         cur.execute(f"INSERT INTO quiz VALUES ('{now.strftime('%B %Y').title()}', '{quiz_message.id}')")
         cur.close()
         self.database.commit()
+        return f"[LOG];{datetime.datetime.now()};Opened new quiz for month {now.strftime('%B %Y').title()}"
 
     async def close_quiz(self):
         now = datetime.datetime.now()
@@ -100,7 +102,7 @@ class QuizCog(commands.Cog):
         query = now.strftime('%B %Y').title()
         acting_quiz: tuple[str, str] = cur.execute(f"SELECT * FROM quiz WHERE [month] = '{query}'").fetchone()
         if acting_quiz is None:
-            return
+            return f"[ERROR];{datetime.datetime.now()};Could not find the object"
         quiz_message: discord.Message = await self.quiz_channel.fetch_message(int(acting_quiz[1]))
         quiz: discord.Embed = quiz_message.embeds[0]
         quiz.description = f"***<a:GifTada:794379610246610954>Ankieta zakończona!<a:GifTada:794379610246610954>***\n" + quiz.description
@@ -108,11 +110,14 @@ class QuizCog(commands.Cog):
         cur.execute(f"DELETE FROM quiz WHERE [month] = '{query}'")
         cur.close()
         self.database.commit()
+        return f"[LOG];{datetime.datetime.now()};Quiz for month {acting_quiz[0]} closed"
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         if message.content.__contains__('zostaną zmienione'):
-            await self.close_quiz()
+            if self.quiz_channel is None:
+                self.quiz_channel = self.bot.get_channel(780881100750585866)
+            print(await self.close_quiz())
             await message.add_reaction("🥳")
 
 
