@@ -18,8 +18,10 @@ TOKEN = os.getenv('discordToken')
 
 bot = commands.Bot(command_prefix=('Corona', '!'))
 lastEmbed = None
-
-locale.setlocale(locale.LC_TIME, 'pl_PL')
+try:
+    locale.setlocale(locale.LC_TIME, 'pl_PL')
+except:
+    pass
 
 
 @bot.event
